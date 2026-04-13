@@ -20,6 +20,11 @@ except ImportError:
 load_dotenv()
 
 app = Flask(__name__)
+
+# Trust Render's (and other reverse proxies') X-Forwarded-Proto header
+# so url_for(..., _external=True) generates https:// URLs in production
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.jinja_env.globals.update(zip=zip, enumerate=enumerate)
 game_db.init_db()
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key')
@@ -267,8 +272,10 @@ def register():
 
 # ── OAuth Login ────────────────────────────────────────────────────────────────
 
-# Providers that must open in the system browser (Google blocks embedded WebView)
-BROWSER_PROVIDERS = {'google'}
+# In desktop mode Google must open in the system browser (blocks embedded WebView).
+# On a real web server we do a normal redirect for all providers.
+_IS_DESKTOP = _WEBVIEW_AVAILABLE and os.getenv('FLASK_ENV') == 'desktop'
+BROWSER_PROVIDERS = {'google'} if _IS_DESKTOP else set()
 
 # Server-side store: maps oauth state → authlib token params
 # Used so the callback works even when it arrives in a different browser
