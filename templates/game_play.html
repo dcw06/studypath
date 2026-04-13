@@ -1,0 +1,233 @@
+{% extends "game_base.html" %}
+{% block title %}Playing — QuizArena{% endblock %}
+{% block head %}
+<style>
+  .choice-btn { transition: background .15s, border-color .15s; }
+  .choice-btn.correct  { background:#064e3b!important; border-color:#10b981!important; color:#6ee7b7!important; }
+  .choice-btn.wrong    { background:#450a0a!important; border-color:#ef4444!important; color:#fca5a5!important; }
+  .choice-btn.reveal   { background:#1e1b4b!important; border-color:#6366f1!important; }
+  .choice-btn.eliminated { opacity:.35; cursor:default; }
+  .choice-btn:disabled { cursor:default; }
+  #pause-overlay { display:none; position:fixed; inset:0; background:#000a; z-index:999;
+                   align-items:center; justify-content:center; }
+  #pause-overlay.active { display:flex; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-med">
+
+  <!-- Header bar -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <span class="pill pill-{{ session_data.difficulty }}">{{ session_data.difficulty|title }}</span>
+      <span style="color:var(--muted);font-size:13px;margin-left:8px;">{{ session_data.subject }} · {{ session_data.mode|title }}</span>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;">
+      <div style="font-size:14px;color:var(--muted);">
+        <strong id="q-num" style="color:var(--text);">1</strong> / {{ questions|length }}
+      </div>
+      <div style="font-weight:700;color:var(--accent);" id="score-display">Score: 0</div>
+      <!-- Pause button -->
+      <button onclick="togglePause()" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--muted);cursor:pointer;font-size:13px;">⏸ Pause</button>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-wrap" style="margin-bottom:24px;">
+    <div class="progress-bar" id="progress-bar" style="width:0%;transition:width .4s;"></div>
+  </div>
+
+  <!-- Timer (timed/blitz/survival) -->
+  {% if session_data.mode in ['timed', 'blitz', 'survival'] %}
+  <div style="text-align:center;margin-bottom:16px;">
+    <div id="timer-wrap" style="display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px 20px;">
+      <span style="font-size:18px;">⏱️</span>
+      <span id="timer" style="font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text);">
+        {{ 20 if session_data.mode == 'timed' else 10 }}
+      </span>
+      <span style="color:var(--muted);font-size:13px;">sec</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Streak -->
+  {% if session_data.mode in ['survival', 'blitz'] %}
+  <div style="text-align:center;margin-bottom:16px;">
+    <span style="font-size:13px;color:var(--muted);">Streak: </span>
+    <span id="streak-val" style="font-weight:700;color:var(--accent);">0</span>
+    <span style="color:var(--muted);margin-left:4px;">🔥</span>
+  </div>
+  {% endif %}
+
+  <!-- Question card -->
+  <div class="card" id="question-card" style="margin-bottom:20px;padding:32px 28px;">
+    <div id="q-text" style="font-size:20px;font-weight:700;line-height:1.5;margin-bottom:8px;">Loading…</div>
+    <div id="q-meta" style="font-size:12px;color:var(--muted);"></div>
+  </div>
+
+  <!-- Choices -->
+  <div id="choices" style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;"></div>
+
+  <!-- Hint button -->
+  <div style="display:flex;gap:10px;margin-bottom:20px;" id="hint-wrap">
+    <button onclick="useHint()" id="hint-btn"
+            style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 16px;color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;">
+      💡 Use Hint <span id="hints-left" style="color:var(--accent);">({{ 1 if session_data.mode in ['solo','practice'] else 0 }} left)</span>
+    </button>
+    <div style="font-size:12px;color:var(--muted);padding-top:8px;">Eliminates 2 wrong answers</div>
+  </div>
+
+  <!-- Explanation (solo/practice) -->
+  {% if session_data.mode in ['solo', 'practice'] %}
+  <div id="explanation" style="display:none;" class="card">
+    <div style="font-weight:700;color:var(--primary);margin-bottom:6px;">💡 Explanation</div>
+    <div id="exp-text" style="color:var(--muted);font-size:14px;line-height:1.6;"></div>
+    <button onclick="nextQuestion()" class="btn btn-primary" style="margin-top:16px;width:100%;">Next →</button>
+  </div>
+  {% endif %}
+
+  <!-- Next button (non-explanation modes) -->
+  {% if session_data.mode not in ['solo', 'practice'] %}
+  <div id="next-wrap" style="display:none;text-align:center;">
+    <button onclick="nextQuestion()" class="btn btn-primary btn-lg" style="min-width:180px;">Next →</button>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Pause overlay -->
+<div id="pause-overlay">
+  <div class="card" style="text-align:center;padding:40px;max-width:360px;width:90%;">
+    <div style="font-size:48px;margin-bottom:16px;">⏸</div>
+    <div style="font-size:20px;font-weight:800;margin-bottom:8px;">Game Paused</div>
+    <div style="color:var(--muted);margin-bottom:24px;">Take a break — your progress is saved.</div>
+    <button onclick="togglePause()" class="btn btn-primary btn-lg" style="width:100%;margin-bottom:12px;">▶ Resume</button>
+    <a href="{{ url_for('game_modes') }}" class="btn btn-ghost" style="display:block;">Quit Game</a>
+  </div>
+</div>
+
+<script>
+const questions = {{ questions_json|safe }};
+const sessionId = {{ session_id }};
+const mode      = '{{ session_data.mode }}';
+const hasExplanation = {{ 'true' if session_data.mode in ['solo','practice'] else 'false' }};
+const timerDuration  = {{ 20 if session_data.mode == 'timed' else (10 if session_data.mode == 'blitz' else 0) }};
+const maxHints       = {{ 1 if session_data.mode in ['solo','practice'] else 0 }};
+
+let qi = 0, score = 0, streak = 0, timerInterval = null;
+let hintsUsed = 0, paused = false;
+const answers = [];
+const startTime = Date.now();
+
+function renderQuestion() {
+  if (qi >= questions.length) { submitGame(); return; }
+  const q = questions[qi];
+  document.getElementById('q-num').textContent = qi + 1;
+  document.getElementById('q-text').textContent = q.question;
+  document.getElementById('q-meta').textContent = q.topic + ' · ' + q.difficulty;
+  document.getElementById('progress-bar').style.width = (qi / questions.length * 100) + '%';
+
+  if (hasExplanation) document.getElementById('explanation').style.display = 'none';
+  else document.getElementById('next-wrap').style.display = 'none';
+
+  // Re-enable hint button for new question (1 hint per question)
+  const hb = document.getElementById('hint-btn');
+  if (hb) { hb.disabled = false; hb.style.opacity = '1'; }
+  document.getElementById('hints-left').textContent = '(' + (maxHints - hintsUsed > 0 ? 1 : 0) + ' left)';
+
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = q.choices.map((c, i) =>
+    `<button class="choice-btn" onclick="answer(${i})" id="choice-${i}">
+       <span class="choice-letter">${'ABCD'[i]}</span>
+       <span>${c}</span>
+     </button>`
+  ).join('');
+
+  if (timerDuration > 0) startTimer(timerDuration);
+}
+
+function startTimer(secs) {
+  clearInterval(timerInterval);
+  let remaining = secs;
+  const el = document.getElementById('timer');
+  const wrap = document.getElementById('timer-wrap');
+  if (el) el.textContent = remaining;
+  timerInterval = setInterval(() => {
+    if (paused) return;
+    remaining--;
+    if (el) el.textContent = remaining;
+    if (wrap) wrap.style.borderColor = remaining <= 5 ? 'var(--danger)' : 'var(--border)';
+    if (remaining <= 0) { clearInterval(timerInterval); answer(-1); }
+  }, 1000);
+}
+
+function useHint() {
+  if (hintsUsed >= maxHints) return;
+  const q = questions[qi];
+  const correct = q.answer;
+  const wrong = [0,1,2,3].filter(i => i !== correct);
+  // Eliminate 2 random wrong answers
+  const toElim = wrong.sort(() => Math.random()-0.5).slice(0,2);
+  toElim.forEach(i => {
+    const b = document.getElementById('choice-' + i);
+    if (b) { b.disabled = true; b.classList.add('eliminated'); }
+  });
+  hintsUsed++;
+  const hb = document.getElementById('hint-btn');
+  if (hb) { hb.disabled = true; hb.style.opacity = '0.4'; }
+  document.getElementById('hints-left').textContent = '(0 left)';
+}
+
+function answer(idx) {
+  clearInterval(timerInterval);
+  const q = questions[qi];
+  const correct = q.answer;
+  const isCorrect = idx === correct;
+  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+  if (idx >= 0) document.getElementById('choice-' + idx).classList.add(isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect) document.getElementById('choice-' + correct).classList.add('reveal');
+  if (isCorrect) { score++; streak++; }
+  else { streak = 0; if (mode === 'survival') { answers.push(idx); submitGame(); return; } }
+  const sv = document.getElementById('streak-val');
+  if (sv) sv.textContent = streak;
+  document.getElementById('score-display').textContent = 'Score: ' + score;
+  answers.push(idx);
+  if (hasExplanation && q.explanation) {
+    document.getElementById('exp-text').textContent = q.explanation;
+    document.getElementById('explanation').style.display = 'block';
+  } else {
+    document.getElementById('next-wrap').style.display = 'block';
+  }
+}
+
+function nextQuestion() { qi++; renderQuestion(); }
+
+function togglePause() {
+  paused = !paused;
+  document.getElementById('pause-overlay').classList.toggle('active', paused);
+}
+
+function submitGame() {
+  const timeTaken = Math.round((Date.now() - startTime) / 1000);
+  // Clear the autosave beacon so it doesn't double-submit
+  window._gameSubmitted = true;
+  fetch('/game/submit', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ session_id: sessionId, answers, score, time_taken: timeTaken })
+  })
+  .then(r => r.json())
+  .then(d => { window.location.href = d.redirect; });
+}
+
+// Auto-save on close/navigate-away: fire-and-forget via sendBeacon
+window.addEventListener('beforeunload', () => {
+  if (window._gameSubmitted) return;
+  const timeTaken = Math.round((Date.now() - startTime) / 1000);
+  const payload = JSON.stringify({ session_id: sessionId, answers, score, time_taken: timeTaken });
+  navigator.sendBeacon('/game/autosave', new Blob([payload], { type: 'application/json' }));
+});
+
+renderQuestion();
+</script>
+{% endblock %}

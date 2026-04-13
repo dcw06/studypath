@@ -1,0 +1,259 @@
+{% extends "game_base.html" %}
+{% block title %}Choose Topic — QuizArena{% endblock %}
+{% block content %}
+<div class="page-med">
+  <a href="{{ url_for('game_modes') }}" style="color:var(--muted);font-size:14px;text-decoration:none;display:inline-block;margin-bottom:16px;">← Back to modes</a>
+  <div class="page-title">Pick a Subject</div>
+  <div class="page-sub">Mode: <strong style="color:var(--accent);">{{ mode|title }}</strong></div>
+
+  <!-- Search bar -->
+  <div style="position:relative;margin-bottom:20px;">
+    <input type="text" id="subject-search" placeholder="🔍 Search subjects or topics…"
+           oninput="filterSubjects(this.value)"
+           style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:12px;
+                  padding:12px 16px;color:var(--text);font-size:14px;">
+  </div>
+
+  <!-- Grade / level filter -->
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+    <span style="font-size:13px;color:var(--muted);padding-top:6px;">Level:</span>
+    {% for lvl, label in [('all','All'),('hs','High School'),('ap','AP / Advanced'),('college','College')] %}
+    <button onclick="setLevel('{{ lvl }}')" id="lvl-{{ lvl }}"
+            class="diff-btn {{ 'selected' if lvl=='all' else '' }}">{{ label }}</button>
+    {% endfor %}
+  </div>
+
+  <!-- Subject selection -->
+  <div id="subject-grid" class="grid-4" style="margin-bottom:32px;">
+    {% for subj in subjects %}
+    {% set meta = subject_meta.get(subj, {'icon': '📚', 'color': '#6366f1'}) %}
+    <button onclick="selectSubject('{{ subj }}')"
+            id="subj-{{ subj|replace(' ','_') }}"
+            data-subject="{{ subj }}"
+            class="subject-card {{ 'selected' if selected_subject == subj else '' }}"
+            style="{{ 'border-color:'+meta.color+';' if selected_subject == subj else '' }}">
+      <div style="font-size:32px;margin-bottom:8px;">{{ meta.icon }}</div>
+      <div style="font-weight:700;font-size:13px;">{{ subj }}</div>
+    </button>
+    {% endfor %}
+  </div>
+
+  <!-- Topic section -->
+  <div id="topic-section" style="{{ '' if selected_subject else 'display:none' }}">
+    <div class="section-title">Choose a Topic</div>
+
+    <!-- Recently played topics -->
+    {% if recent_topics %}
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Recently played:</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        {% for rt_subj, rt_topic in recent_topics %}
+        <button onclick="selectSubjectAndTopic('{{ rt_subj }}', '{{ rt_topic }}')"
+                style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;color:var(--muted);cursor:pointer;">
+          🕐 {{ rt_topic }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div id="topic-list" class="grid-2" style="margin-bottom:28px;">
+      {% if topics %}
+        {% for topic in topics %}
+        <button onclick="selectTopic('{{ topic }}')"
+                id="topic-{{ topic|replace(' ','_') }}"
+                class="topic-btn {{ 'selected' if selected_topic == topic else '' }}">
+          {{ topic }}
+        </button>
+        {% endfor %}
+        <button onclick="selectTopic('random')"
+                id="topic-random"
+                class="topic-btn {{ 'selected' if selected_topic == 'random' else '' }}">
+          🎲 Random Topic
+        </button>
+      {% endif %}
+    </div>
+
+    <!-- Difficulty -->
+    <div class="section-title">Difficulty</div>
+    <div style="display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap;">
+      {% for d in ['easy','medium','hard'] %}
+      <button onclick="selectDiff('{{ d }}')" id="diff-{{ d }}"
+              class="diff-btn {{ 'selected' if selected_diff == d else ('selected' if d=='medium' and not selected_diff else '') }}">
+        {{ {'easy':'😊 Easy','medium':'😤 Medium','hard':'💀 Hard'}[d] }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <!-- Question count -->
+    <div class="section-title">Number of Questions</div>
+    <div style="display:flex;gap:10px;margin-bottom:32px;">
+      {% for n in [5, 10, 15] %}
+      <button onclick="selectCount({{ n }})" id="count-{{ n }}"
+              class="diff-btn {{ 'selected' if n == 10 else '' }}">
+        {{ n }} Qs
+      </button>
+      {% endfor %}
+    </div>
+
+    <!-- Bot difficulty (shown for bot mode) -->
+    <div id="bot-section" style="{{ '' if mode=='bot' else 'display:none' }};margin-bottom:28px;">
+      <div class="section-title">Bot Difficulty</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        {% for bd in ['Beginner','Intermediate','Expert'] %}
+        <button onclick="selectBot('{{ bd }}')" id="bot-{{ bd }}"
+                class="diff-btn {{ 'selected' if bd=='Intermediate' else '' }}">
+          {{ bd }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Study resources panel (appears when subject selected) -->
+    <div id="resources-panel" style="display:none;margin-bottom:28px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;">📚 Study First</div>
+        <a id="resources-link" href="{{ url_for('game_resources') }}" style="font-size:12px;color:var(--primary-l);text-decoration:none;">View all →</a>
+      </div>
+      <div id="resources-list" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+    </div>
+
+    <form id="start-form" method="POST" action="{{ url_for('game_lobby_setup') }}" onsubmit="return validateForm()">
+      <input type="hidden" name="mode"        id="f-mode"    value="{{ mode }}">
+      <input type="hidden" name="subject"     id="f-subject" value="{{ selected_subject or '' }}">
+      <input type="hidden" name="topic"       id="f-topic"   value="{{ selected_topic or '' }}">
+      <input type="hidden" name="difficulty"  id="f-diff"    value="{{ selected_diff or 'medium' }}">
+      <input type="hidden" name="count"       id="f-count"   value="10">
+      <input type="hidden" name="bot_level"   id="f-bot"     value="Intermediate">
+      <button type="submit" class="btn btn-primary btn-lg btn-full" id="start-btn">
+        ▶ Continue to Lobby
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let curSubject = '{{ selected_subject or "" }}';
+let curTopic   = '{{ selected_topic or "" }}';
+let curDiff    = '{{ selected_diff or "medium" }}';
+let curCount   = 10;
+const subjectMeta = {{ subject_meta_json|safe }};
+const subjectResources = {{ subject_resources_json|safe }};
+const platforms = {{ platforms_json|safe }};
+
+function filterSubjects(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('#subject-grid .subject-card').forEach(btn => {
+    const name = btn.dataset.subject.toLowerCase();
+    btn.style.display = (name.includes(q) || q === '') ? '' : 'none';
+  });
+}
+
+function setLevel(lvl) {
+  document.querySelectorAll('[id^="lvl-"]').forEach(b => b.classList.remove('selected'));
+  document.getElementById('lvl-' + lvl).classList.add('selected');
+  // For now just visual — could filter topics by grade level
+}
+
+function selectSubject(s) {
+  document.querySelectorAll('.subject-card').forEach(el => {
+    el.classList.remove('selected');
+    el.style.borderColor = '';
+  });
+  const btn = document.getElementById('subj-' + s.replace(/ /g,'_'));
+  if (btn) {
+    btn.classList.add('selected');
+    const meta = subjectMeta[s] || {};
+    if (meta.color) btn.style.borderColor = meta.color;
+  }
+  document.getElementById('f-subject').value = s;
+  curSubject = s;
+  fetch('/game/topics-for/' + encodeURIComponent(s))
+    .then(r => r.json())
+    .then(data => {
+      const list = document.getElementById('topic-list');
+      list.innerHTML = data.topics.map(t =>
+        `<button onclick="selectTopic('${t}')" id="topic-${t.replace(/ /g,'_')}" class="topic-btn">${t}</button>`
+      ).join('') + `<button onclick="selectTopic('random')" id="topic-random" class="topic-btn">🎲 Random Topic</button>`;
+      document.getElementById('topic-section').style.display = '';
+      document.getElementById('f-topic').value = '';
+      showSubjectResources(s);
+    });
+}
+
+function showSubjectResources(subj) {
+  const panel = document.getElementById('resources-panel');
+  const list  = document.getElementById('resources-list');
+  const link  = document.getElementById('resources-link');
+  const rs = subjectResources[subj] || [];
+  if (!rs.length) { panel.style.display = 'none'; return; }
+  panel.style.display = '';
+  link.href = '/game/resources';
+  list.innerHTML = rs.slice(0,5).map(r => {
+    const pm = platforms[r.platform] || platforms.coursera;
+    return `<a href="${r.url}" target="_blank" rel="noopener"
+      style="display:inline-flex;align-items:center;gap:6px;background:${pm.bg};border:1px solid ${pm.border};border-radius:8px;padding:6px 12px;text-decoration:none;font-size:12px;font-weight:600;color:${pm.color};">
+      ${pm.icon} ${r.title}
+    </a>`;
+  }).join('');
+}
+
+function selectSubjectAndTopic(subj, topic) {
+  selectSubject(subj);
+  setTimeout(() => selectTopic(topic), 300);
+}
+
+function selectTopic(t) {
+  document.querySelectorAll('.topic-btn').forEach(el => el.classList.remove('selected'));
+  const id = 'topic-' + t.replace(/ /g,'_');
+  const el = document.getElementById(id);
+  if (el) el.classList.add('selected');
+  document.getElementById('f-topic').value = t;
+  curTopic = t;
+}
+
+function selectDiff(d) {
+  document.querySelectorAll('.diff-btn[id^="diff-"]').forEach(el => el.classList.remove('selected'));
+  document.getElementById('diff-' + d).classList.add('selected');
+  document.getElementById('f-diff').value = d;
+  curDiff = d;
+}
+
+function selectCount(n) {
+  document.querySelectorAll('.diff-btn[id^="count-"]').forEach(el => el.classList.remove('selected'));
+  document.getElementById('count-' + n).classList.add('selected');
+  document.getElementById('f-count').value = n;
+  curCount = n;
+}
+
+function selectBot(b) {
+  document.querySelectorAll('.diff-btn[id^="bot-"]').forEach(el => el.classList.remove('selected'));
+  document.getElementById('bot-' + b).classList.add('selected');
+  document.getElementById('f-bot').value = b;
+}
+
+function validateForm() {
+  if (!document.getElementById('f-subject').value) {
+    alert('Please select a subject first.');
+    return false;
+  }
+  if (!document.getElementById('f-topic').value) {
+    alert('Please select a topic (or Random Topic).');
+    return false;
+  }
+  return true;
+}
+
+// Pre-select subject if passed in URL
+{% if selected_subject %}
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('subj-{{ selected_subject|replace(" ","_") }}');
+  if (btn) {
+    const meta = subjectMeta['{{ selected_subject }}'] || {};
+    if (meta.color) btn.style.borderColor = meta.color;
+  }
+});
+{% endif %}
+</script>
+{% endblock %}

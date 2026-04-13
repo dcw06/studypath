@@ -1,0 +1,11 @@
+# Web framework
+flask
+gunicorn
+python-dotenv
+
+# Auth
+authlib
+requests
+
+# Optional: pywebview only needed for the desktop build, not the web server
+# pywebview

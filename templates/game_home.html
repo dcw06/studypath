@@ -1,0 +1,222 @@
+{% extends "game_base.html" %}
+{% block title %}StudyPath — Learn. Practice. Master.{% endblock %}
+{% block content %}
+
+<!-- ── Hero ──────────────────────────────────────────────────────────── -->
+<section class="hero-section">
+  <div class="hero-eyebrow">
+    📚 7 subjects · K–12 &amp; College · Updated daily
+  </div>
+  <h1 class="hero-title fade-up">
+    The Study Tool<br>Built for <span class="gradient-text">Real Learning</span>
+  </h1>
+  <p class="hero-sub fade-up-2">
+    Practice questions with instant explanations, track your progress by topic,
+    and build real knowledge — from elementary through college level.
+  </p>
+  <div class="hero-btns fade-up-3">
+    {% if session.get('user') %}
+      <a href="{{ url_for('game_modes') }}" class="btn btn-primary btn-lg">Start Studying</a>
+      <a href="{{ url_for('game_dashboard') }}" class="btn btn-ghost btn-lg">My Dashboard</a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">Get Started Free</a>
+      <a href="{{ url_for('game_modes') }}" class="btn btn-ghost btn-lg">Explore Topics</a>
+    {% endif %}
+  </div>
+
+  <!-- Stats strip -->
+  <div class="hero-stats fade-up-3">
+    <div class="hero-stat">
+      <div class="val">{{ total_questions }}+</div>
+      <div class="lbl">Questions</div>
+    </div>
+    <div class="hero-stat">
+      <div class="val">{{ total_subjects }}</div>
+      <div class="lbl">Subjects</div>
+    </div>
+    <div class="hero-stat">
+      <div class="val">K–12</div>
+      <div class="lbl">Grade Levels</div>
+    </div>
+    <div class="hero-stat">
+      <div class="val">3</div>
+      <div class="lbl">Difficulty Tiers</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Daily Challenge Banner ─────────────────────────────────────────── -->
+{% if daily %}
+<div style="max-width:1200px;margin:0 auto;padding:0 32px;">
+  <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid rgba(245,158,11,.3);border-radius:14px;padding:22px 28px;display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-bottom:16px;">
+    <div style="font-size:36px;">📅</div>
+    <div style="flex:1;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent-d);margin-bottom:4px;">Today's Daily Practice</div>
+      <div style="font-size:17px;font-weight:800;color:var(--text);">{{ daily.subject }} · 5 questions</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:2px;">Complete today's set to build your streak and reinforce your knowledge.</div>
+    </div>
+    <a href="{{ url_for('game_lobby', mode='daily') }}" class="btn btn-accent btn-lg">Start Today's Practice →</a>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Subjects Showcase ───────────────────────────────────────────────── -->
+<div class="subjects-section">
+  <div style="text-align:center;margin-bottom:40px;">
+    <div class="eyebrow">What you can learn</div>
+    <h2 style="font-size:34px;font-weight:800;letter-spacing:-0.5px;margin-bottom:10px;color:var(--text);">
+      Every Subject Covered
+    </h2>
+    <p style="color:var(--muted);font-size:16px;">From elementary math to college-level algorithms — structured and curriculum-aligned.</p>
+  </div>
+  <div class="subjects-grid">
+    {% set subject_colors = {
+      'Math': '#eff6ff',
+      'Science': '#f0fdf4',
+      'Language': '#fffbeb',
+      'History': '#fef2f2',
+      'Computer Science': '#f0f9ff',
+      'Economics': '#f7fee7',
+      'Psychology': '#faf5ff',
+    } %}
+    {% set subject_border = {
+      'Math': 'rgba(37,99,235,.2)',
+      'Science': 'rgba(5,150,105,.2)',
+      'Language': 'rgba(245,158,11,.2)',
+      'History': 'rgba(220,38,38,.2)',
+      'Computer Science': 'rgba(14,165,233,.2)',
+      'Economics': 'rgba(101,163,13,.2)',
+      'Psychology': 'rgba(168,85,247,.2)',
+    } %}
+    {% set subject_icons = {
+      'Math': '➕', 'Science': '🔬', 'Language': '📝',
+      'History': '🏛️', 'Computer Science': '💻', 'Economics': '📊', 'Psychology': '🧠'
+    } %}
+    {% for subj in ['Math','Science','Language','History','Computer Science','Economics','Psychology'] %}
+    <a href="{{ url_for('game_topics', mode='solo') }}?subject={{ subj }}"
+       class="subject-tile"
+       style="background:{{ subject_colors.get(subj,'#fff') }};border-color:{{ subject_border.get(subj,'var(--border)') }};text-decoration:none;">
+      <div class="st-icon">{{ subject_icons.get(subj,'📚') }}</div>
+      <div class="st-name">{{ subj }}</div>
+      <div class="st-count">Grades K–12 &amp; College</div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── Features ───────────────────────────────────────────────────────── -->
+<section class="features-section">
+  <div class="features-header">
+    <div class="eyebrow">Why StudyPath</div>
+    <h2>Designed to build<br>real understanding</h2>
+    <p>Structured practice with instant feedback, progress tracking, and curriculum-aligned content.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="fc-icon" style="background:rgba(37,99,235,.1);">📚</div>
+      <h3>Curriculum-Aligned Content</h3>
+      <p>Questions are organized by subject, topic, and grade level — from K–5 basics through college-level material.</p>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon" style="background:rgba(245,158,11,.1);">📅</div>
+      <h3>Daily Practice</h3>
+      <p>A fresh set of 5 questions every day. Build consistent study habits and keep knowledge fresh.</p>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon" style="background:rgba(5,150,105,.1);">📈</div>
+      <h3>Progress Tracking</h3>
+      <p>See your accuracy by subject and topic. Identify weak areas and measure improvement over time.</p>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon" style="background:rgba(220,38,38,.08);">⏱️</div>
+      <h3>Flexible Study Modes</h3>
+      <p>Practice at your own pace, use timed mode to simulate tests, or use blitz mode for quick review sessions.</p>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon" style="background:rgba(168,85,247,.1);">💡</div>
+      <h3>Instant Explanations</h3>
+      <p>Every question includes a clear explanation. Learn <em>why</em> an answer is correct — not just what it is.</p>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon" style="background:rgba(14,165,233,.1);">📖</div>
+      <h3>Study Resources</h3>
+      <p>Access reference materials and topic summaries alongside practice — everything in one place.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── How it works ────────────────────────────────────────────────────── -->
+<section class="how-section" style="max-width:1200px;margin:0 auto;">
+  <div class="eyebrow">How it works</div>
+  <h2 style="font-size:34px;font-weight:800;letter-spacing:-0.5px;margin-bottom:8px;color:var(--text);">Start learning in minutes</h2>
+  <p style="color:var(--muted);margin-bottom:0;font-size:16px;">No lengthy setup. Just pick a topic and start practicing.</p>
+  <div class="steps" style="margin-top:52px;">
+    {% for icon, title, desc in [
+      ('🔑', 'Sign In', 'Create a free account or explore topics as a guest'),
+      ('📚', 'Choose a Subject', 'Select from 7 subjects spanning K–12 through college level'),
+      ('✏️', 'Start Practicing', 'Answer questions at your chosen difficulty and grade level'),
+      ('📈', 'Track Progress', 'Review explanations, see your accuracy, and identify weak spots')
+    ] %}
+    <div class="step">
+      <div class="step-num">{{ icon }}</div>
+      <div class="step-connector"></div>
+      <h4>{{ title }}</h4>
+      <p>{{ desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ── Leaderboard Preview ─────────────────────────────────────────────── -->
+{% if leaderboard %}
+<div class="lb-preview-section">
+  <div class="lb-preview-inner">
+    <div>
+      <div class="eyebrow">Leaderboard</div>
+      <h2 style="font-size:30px;font-weight:800;letter-spacing:-0.5px;margin-bottom:12px;color:var(--text);">
+        See how you stack up<br>and stay motivated
+      </h2>
+      <p style="color:var(--muted);font-size:15px;line-height:1.7;margin-bottom:24px;">
+        StudyPath tracks your sessions and scores. Use the leaderboard as
+        motivation to keep studying and building mastery.
+      </p>
+      <a href="{{ url_for('game_leaderboard') }}" class="btn btn-outline-primary">View Full Rankings →</a>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:20px 20px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:700;font-size:15px;">🏆 Top Players</span>
+        <span class="pill pill-primary">All Time</span>
+      </div>
+      {% for p in leaderboard %}
+      <div class="lb-row">
+        <div class="lb-rank {{ ['','gold','silver','bronze','',''][loop.index] if loop.index <= 3 else '' }}">{{ loop.index }}</div>
+        <div class="lb-avatar">{{ p.avatar }}</div>
+        <div class="lb-name">{{ p.username }}</div>
+        <div class="lb-xp">{{ p.xp }} XP</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── CTA ─────────────────────────────────────────────────────────────── -->
+<div style="max-width:1200px;margin:0 auto;padding:0 32px 80px;">
+  <div class="cta-banner">
+    <div style="position:relative;z-index:1;">
+      <h2>Ready to start learning?</h2>
+      <p>Join students and educators using StudyPath to build real knowledge, one topic at a time.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        {% if session.get('user') %}
+          <a href="{{ url_for('game_modes') }}" class="btn btn-lg" style="background:#fff;color:var(--primary);font-weight:700;">Start Studying</a>
+          <a href="{{ url_for('game_dashboard') }}" class="btn btn-lg" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);">My Dashboard</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-lg" style="background:#fff;color:var(--primary);font-weight:700;">Create Free Account</a>
+          <a href="{{ url_for('game_modes') }}" class="btn btn-lg" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);">Explore Topics</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

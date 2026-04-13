@@ -1,0 +1,202 @@
+{% extends "game_base.html" %}
+{% block title %}Results — QuizArena{% endblock %}
+{% block content %}
+<div class="page-med">
+
+  <!-- Result header -->
+  <div class="card" style="text-align:center;padding:40px 24px;margin-bottom:24px;">
+    <div style="font-size:64px;margin-bottom:16px;">
+      {% if pct >= 90 %}🏆{% elif pct >= 70 %}🎉{% elif pct >= 50 %}👍{% else %}💪{% endif %}
+    </div>
+    <div class="page-title" style="margin-bottom:4px;">
+      {% if pct >= 90 %}Excellent!{% elif pct >= 70 %}Great Job!{% elif pct >= 50 %}Good Effort!{% else %}Keep Practicing!{% endif %}
+    </div>
+    <div style="font-size:48px;font-weight:900;color:var(--primary);margin:12px 0;">
+      {{ gs.score }}<span style="font-size:24px;color:var(--muted);">/{{ gs.total }}</span>
+    </div>
+    <div style="color:var(--muted);margin-bottom:20px;">{{ pct }}% correct</div>
+    <div class="progress-wrap" style="max-width:320px;margin:0 auto 20px;height:10px;">
+      <div class="progress-bar" style="width:{{ pct }}%;"></div>
+    </div>
+    <div style="display:inline-flex;align-items:center;gap:8px;background:var(--bg);border-radius:12px;padding:12px 24px;">
+      <span style="font-size:22px;">⚡</span>
+      <span style="font-size:20px;font-weight:800;color:var(--accent);">+{{ gs.xp_earned }} XP</span>
+      <span style="color:var(--muted);font-size:13px;">earned</span>
+    </div>
+  </div>
+
+  <!-- Stats row -->
+  <div class="dash-stats" style="margin-bottom:24px;">
+    <div class="dash-stat-card">
+      <div class="stat-val">{{ gs.score }}</div>
+      <div class="stat-lbl">Correct</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="stat-val">{{ gs.total - gs.score }}</div>
+      <div class="stat-lbl">Wrong</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="stat-val">{{ pct }}%</div>
+      <div class="stat-lbl">Accuracy</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="stat-val">{{ time_str }}</div>
+      <div class="stat-lbl">Time Used</div>
+    </div>
+  </div>
+
+  <!-- Rank change -->
+  {% if rank_before and rank_after %}
+  <div class="card" style="margin-bottom:24px;display:flex;align-items:center;gap:20px;justify-content:center;padding:20px;">
+    <div style="text-align:center;">
+      <div style="font-size:12px;color:var(--muted);">Before</div>
+      <div style="font-size:28px;font-weight:900;color:var(--muted);">#{{ rank_before }}</div>
+    </div>
+    <div style="font-size:24px;">
+      {% if rank_after < rank_before %}⬆️{% elif rank_after > rank_before %}⬇️{% else %}➡️{% endif %}
+    </div>
+    <div style="text-align:center;">
+      <div style="font-size:12px;color:var(--muted);">After</div>
+      <div style="font-size:28px;font-weight:900;color:{{ 'var(--success)' if rank_after < rank_before else 'var(--text)' }};">#{{ rank_after }}</div>
+    </div>
+    <div style="font-size:13px;color:var(--muted);border-left:1px solid var(--border);padding-left:20px;">
+      {% if rank_after < rank_before %}
+        Moved up {{ rank_before - rank_after }} place{{ 's' if rank_before - rank_after > 1 else '' }}!
+      {% elif rank_after == rank_before %}
+        Rank unchanged
+      {% else %}
+        Dropped {{ rank_after - rank_before }} place{{ 's' if rank_after - rank_before > 1 else '' }}
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Performance bar chart -->
+  {% if questions %}
+  <div class="card" style="margin-bottom:24px;">
+    <div style="font-weight:700;margin-bottom:12px;">📊 Performance</div>
+    <div style="display:flex;align-items:flex-end;gap:4px;height:60px;">
+      {% for q, given in zip(questions, given_answers) %}
+      {% set correct = q.answer == given %}
+      <div style="flex:1;background:{{ '#10b981' if correct else '#ef4444' }};border-radius:4px 4px 0 0;
+                  height:{{ '100%' if correct else '40%' }};min-width:8px;" title="{{ q.question[:40] }}..."></div>
+      {% endfor %}
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;">
+      <span>Q1</span><span>Q{{ questions|length }}</span>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:8px;font-size:12px;">
+      <span style="color:#10b981;">■ Correct</span>
+      <span style="color:#ef4444;">■ Incorrect</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Question review -->
+  {% if questions %}
+  <div class="section-title">Question Review</div>
+  <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;">
+    {% for q, given in zip(questions, given_answers) %}
+    {% set correct = q.answer == given %}
+    <div class="card" style="border-color:{{ '#10b98133' if correct else '#ef444433' }};">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
+        <div style="font-weight:600;font-size:15px;flex:1;">{{ loop.index }}. {{ q.question }}</div>
+        <span style="font-size:18px;">{{ '✅' if correct else '❌' }}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        {% for i, choice in enumerate(q.choices) %}
+        <div style="padding:6px 12px;border-radius:8px;font-size:14px;
+          background:{{ '#064e3b' if i == q.answer else ('#450a0a' if i == given and not correct else 'var(--bg)') }};
+          color:{{ '#6ee7b7' if i == q.answer else ('#fca5a5' if i == given and not correct else 'var(--muted)') }};">
+          {{ 'ABCD'[i] }}. {{ choice }}{% if i == q.answer %} ✓{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% if q.explanation %}
+      <div style="margin-top:10px;font-size:13px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;">
+        💡 {{ q.explanation }}
+      </div>
+      {% endif %}
+      {% if not correct %}
+      {% set q_resources = topic_resources.get(q.topic, []) %}
+      {% if q_resources %}
+      <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">📚 Learn More</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          {% for res in q_resources[:3] %}
+          {% set pm = platforms.get(res.platform, platforms.coursera) %}
+          <a href="{{ res.url }}" target="_blank" rel="noopener"
+             style="display:inline-flex;align-items:center;gap:6px;background:{{ pm.bg }};border:1px solid {{ pm.border }};border-radius:8px;padding:5px 10px;text-decoration:none;font-size:12px;font-weight:600;color:{{ pm.color }};transition:opacity .15s;"
+             onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">
+            {{ pm.icon }} {{ res.title }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Action buttons -->
+  <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;">
+    <a href="{{ url_for('game_modes') }}" class="btn btn-primary btn-lg">▶ Play Again</a>
+    <a href="{{ url_for('game_dashboard') }}" class="btn btn-ghost btn-lg">Dashboard</a>
+    <a href="{{ url_for('game_leaderboard') }}" class="btn btn-ghost btn-lg">🏆 Rankings</a>
+    <button onclick="shareResult()" class="btn btn-ghost btn-lg">📤 Share</button>
+    <a href="javascript:shareToClassroom()" class="btn btn-ghost btn-lg" style="background:rgba(66,133,244,.1);border-color:rgba(66,133,244,.3);color:#4285f4;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;"><path d="M12 3C6.477 3 2 7.477 2 13c0 2.136.67 4.116 1.81 5.74L2 22l3.26-1.81A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 3 12 3zm0 2c4.418 0 8 3.582 8 8s-3.582 8-8 8-8-3.582-8-8 3.582-8 8-8zm-1 4v2H7v2h4v2l3-3-3-3zm2 6v-2h4v-2h-4V9l-3 3 3 3z"/></svg>
+      Share to Classroom
+    </a>
+  </div>
+
+  <!-- Study resources panel -->
+  {% if topic_resources %}
+  <div class="card" style="margin-bottom:20px;">
+    <div style="font-size:15px;font-weight:700;margin-bottom:14px;">📚 Keep Learning</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      {% for topic, res_list in topic_resources.items() %}
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;">{{ topic }}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          {% for res in res_list[:4] %}
+          {% set pm = platforms.get(res.platform, platforms.coursera) %}
+          <a href="{{ res.url }}" target="_blank" rel="noopener"
+             style="display:inline-flex;align-items:center;gap:6px;background:{{ pm.bg }};border:1px solid {{ pm.border }};border-radius:9px;padding:7px 13px;text-decoration:none;font-size:13px;font-weight:600;color:{{ pm.color }};transition:all .15s;"
+             onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">
+            {{ pm.icon }} {{ res.title }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+      <a href="{{ url_for('game_resources') }}" class="btn btn-ghost btn-sm">View All Study Resources →</a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function shareResult() {
+  const text = `I scored {{ gs.score }}/{{ gs.total }} ({{ pct }}%) on QuizArena{{ ' — ' + gs.subject if gs.subject else '' }}! +{{ gs.xp_earned }} XP earned. 🏆`;
+  if (navigator.share) {
+    navigator.share({ title: 'QuizArena Result', text });
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => alert('Result copied to clipboard!'));
+  } else {
+    alert(text);
+  }
+}
+
+function shareToClassroom() {
+  const text = encodeURIComponent(`I scored {{ gs.score }}/{{ gs.total }} ({{ pct }}%) on QuizArena{{ ' — ' + gs.subject if gs.subject else '' }}! +{{ gs.xp_earned }} XP. Try it at http://localhost:5002/game`);
+  const url = `https://classroom.google.com/share?url=${encodeURIComponent('http://localhost:5002/game')}&title=${text}&body=${text}`;
+  window.open(url, '_blank', 'noopener');
+}
+</script>
+{% endblock %}

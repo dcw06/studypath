@@ -1,0 +1,231 @@
+{% extends "game_base.html" %}
+{% block title %}Dashboard — QuizArena{% endblock %}
+{% block content %}
+<div class="page">
+
+  <!-- Dashboard Hero -->
+  <div class="dash-hero">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+      <div>
+        <div class="dash-greeting">👋 Welcome back, {{ player.username }}!</div>
+        <div class="dash-sub">Keep studying — you're {{ 100 - (player.xp % 100) }} XP from Level {{ player.level + 1 }}.</div>
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+          <div class="streak-pill">🔥 {{ player.streak }}-day streak</div>
+          <span class="pill pill-primary">Lv.{{ player.level }}</span>
+          <span style="font-size:13px;color:var(--muted);padding-top:3px;">{{ player.xp }} XP total</span>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:36px;">{{ player.avatar }}</div>
+        <a href="{{ url_for('game_modes') }}" class="btn btn-primary btn-sm" style="margin-top:10px;">Study Now</a>
+      </div>
+    </div>
+    <!-- XP Progress bar -->
+    <div style="margin-top:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;">
+        <div>
+          <span style="font-size:13px;font-weight:700;color:var(--primary);">Level {{ player.level }}</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:6px;">{{ player.xp % 100 }} / 100 XP</span>
+        </div>
+        <div style="text-align:right;">
+          <span style="font-size:13px;font-weight:700;color:var(--text);">{{ 100 - (player.xp % 100) }} XP</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:4px;">to Level {{ player.level + 1 }}</span>
+        </div>
+      </div>
+      <div class="progress-wrap" style="height:10px;border-radius:99px;">
+        <div class="progress-bar" style="width:{{ player.xp % 100 }}%;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:var(--muted2);">
+        <span>0</span>
+        <span style="color:var(--primary);font-weight:600;">{{ player.xp % 100 }}%</span>
+        <span>100</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="dash-stats" style="margin-bottom:24px;">
+    <div class="dash-stat-card">
+      <div class="stat-val">{{ stats.games_played }}</div>
+      <div class="stat-lbl">Games Played</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="stat-val">{{ stats.avg_score }}%</div>
+      <div class="stat-lbl">Avg Score</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="stat-val">{{ player.xp }}</div>
+      <div class="stat-lbl">Total XP</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="stat-val">#{{ rank }}</div>
+      <div class="stat-lbl">Global Rank</div>
+    </div>
+  </div>
+
+  <!-- League status card -->
+  {% if league_progress %}
+  {% set cur = league_progress.current %}
+  {% set nxt = league_progress.next %}
+  <a href="{{ url_for('game_leagues') }}" style="text-decoration:none;display:block;margin-bottom:20px;">
+    <div style="background:{{ cur.bg }};border:1px solid {{ cur.border }};border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;transition:box-shadow .15s;"
+         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow=''">
+      <div style="font-size:36px;line-height:1;">{{ cur.icon }}</div>
+      <div style="flex:1;min-width:140px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:{{ cur.color }};margin-bottom:2px;">Current League</div>
+        <div style="font-size:18px;font-weight:800;color:{{ cur.color }};">{{ cur.name }}</div>
+        {% if nxt %}
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">{{ league_progress.xp_needed }} XP to {{ nxt.icon }} {{ nxt.name }}</div>
+        {% else %}
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Maximum league reached</div>
+        {% endif %}
+      </div>
+      {% if nxt %}
+      <div style="min-width:120px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px;">
+          <span>{{ league_progress.xp_in_tier }} XP</span>
+          <span>{{ league_progress.xp_in_tier + league_progress.xp_needed }} XP</span>
+        </div>
+        <div style="background:rgba(0,0,0,.08);border-radius:99px;height:7px;overflow:hidden;">
+          <div style="height:100%;width:{{ league_progress.pct }}%;background:{{ cur.color }};border-radius:99px;"></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:center;">{{ league_progress.pct }}% complete</div>
+      </div>
+      {% endif %}
+      <div style="font-size:12px;color:var(--primary);font-weight:600;white-space:nowrap;">View Leagues →</div>
+    </div>
+  </a>
+  {% endif %}
+
+  <!-- Continue playing -->
+  {% if last_session %}
+  <div style="background:var(--card);border:1px solid var(--primary)44;border-radius:16px;padding:16px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="font-size:11px;color:var(--primary);font-weight:700;letter-spacing:1px;margin-bottom:4px;">CONTINUE PLAYING</div>
+      <div style="font-weight:700;">{{ last_session.subject or 'Mixed' }} · {{ last_session.mode|title }}</div>
+      <div style="font-size:13px;color:var(--muted);">Last played {{ last_session.created_at[:10] }} · {{ last_session.score }}/{{ last_session.total }}</div>
+    </div>
+    <a href="{{ url_for('game_topics', mode=last_session.mode, subject=last_session.subject or '') }}" class="btn btn-primary btn-sm">▶ Play Again</a>
+  </div>
+  {% endif %}
+
+  <!-- Daily Challenge -->
+  <div class="daily-banner" style="margin-bottom:24px;">
+    <div>
+      <h3>🌟 Daily Challenge</h3>
+      <p>Today's subject: <strong>{{ daily.subject }}</strong> — 5 questions, bonus XP!</p>
+    </div>
+    <a href="{{ url_for('game_lobby', mode='daily') }}" class="btn btn-accent">Play Now →</a>
+  </div>
+
+  <!-- Active quests -->
+  <div class="section-title" style="margin-bottom:12px;">⚡ Active Quests</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:28px;">
+    <div class="card" style="padding:14px;">
+      <div style="font-size:20px;margin-bottom:6px;">🎯</div>
+      <div style="font-weight:700;font-size:14px;">Play 3 Games Today</div>
+      <div style="font-size:12px;color:var(--muted);margin:4px 0 10px;">{{ [stats.games_played, 3]|min }}/3 completed</div>
+      <div class="progress-wrap" style="height:6px;">
+        <div class="progress-bar" style="width:{{ [stats.games_played * 33, 100]|min }}%;"></div>
+      </div>
+    </div>
+    <div class="card" style="padding:14px;">
+      <div style="font-size:20px;margin-bottom:6px;">📅</div>
+      <div style="font-weight:700;font-size:14px;">Daily Challenge</div>
+      <div style="font-size:12px;color:var(--muted);margin:4px 0 10px;">Complete today's challenge</div>
+      <span class="pill {{ 'pill-easy' if daily_done else 'pill-hard' }}">{{ 'Done ✓' if daily_done else 'Pending' }}</span>
+    </div>
+    <div class="card" style="padding:14px;">
+      <div style="font-size:20px;margin-bottom:6px;">🔥</div>
+      <div style="font-weight:700;font-size:14px;">Keep Your Streak</div>
+      <div style="font-size:12px;color:var(--muted);margin:4px 0 10px;">Current: {{ player.streak }} days</div>
+      <span class="pill pill-medium">🔥 {{ player.streak }} day{{ 's' if player.streak != 1 else '' }}</span>
+    </div>
+  </div>
+
+  <div class="grid-2" style="gap:24px;">
+
+    <!-- Quick Play -->
+    <div>
+      <div class="section-title">⚡ Quick Play</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        {% for mode, icon, label in [('solo','📖','Solo Learning'),('timed','⏱️','Timed Challenge'),('practice','🎯','Practice Mode')] %}
+        <a href="{{ url_for('game_topics', mode=mode) }}" class="mode-card" style="padding:16px;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <span style="font-size:28px;">{{ icon }}</span>
+            <div>
+              <div style="font-weight:700;">{{ label }}</div>
+              <div style="font-size:13px;color:var(--muted);">Start a quick game</div>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Recent Sessions -->
+    <div>
+      <div class="section-title">📋 Recent Games</div>
+      {% if recent_sessions %}
+        {% for s in recent_sessions %}
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:600;font-size:14px;">{{ s.subject or 'Mixed' }} · {{ s.mode|title }}</div>
+            <div style="font-size:12px;color:var(--muted);">{{ s.created_at[:10] }}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700;color:var(--primary);">{{ s.score }}/{{ s.total }}</div>
+            <div style="font-size:12px;color:var(--accent);">+{{ s.xp_earned }} XP</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="color:var(--muted);font-size:14px;padding:20px;text-align:center;background:var(--card);border-radius:12px;border:1px solid var(--border);">
+          No games yet — play your first one!
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Recommended topics -->
+  {% if recommended %}
+  <div style="margin-top:28px;">
+    <div class="section-title">💡 Recommended for You</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+      {% for subj, topic in recommended %}
+      <a href="{{ url_for('game_topics', mode='practice', subject=subj) }}" style="text-decoration:none;">
+        <div class="card" style="padding:12px 16px;display:inline-flex;align-items:center;gap:8px;">
+          <span>{{ subject_meta.get(subj, {}).get('icon', '📚') }}</span>
+          <div>
+            <div style="font-size:13px;font-weight:600;">{{ topic }}</div>
+            <div style="font-size:11px;color:var(--muted);">{{ subj }} · needs practice</div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Subjects overview -->
+  <div style="margin-top:32px;">
+    <div class="section-title">📚 Subjects</div>
+    <div class="grid-4">
+      {% for subj in subjects %}
+      {% set meta = subject_meta.get(subj, {'icon': '📚', 'color': '#6366f1'}) %}
+      <a href="{{ url_for('game_topics', mode='solo', subject=subj) }}" style="text-decoration:none;">
+        <div class="card" style="text-align:center;border-color:{{ meta.color }}22;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='{{ meta.color }}'" onmouseout="this.style.borderColor='{{ meta.color }}22'">
+          <div style="font-size:32px;margin-bottom:8px;">{{ meta.icon }}</div>
+          <div style="font-weight:700;font-size:14px;">{{ subj }}</div>
+          {% if mastery.get(subj) is not none %}
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">{{ mastery[subj] }}% mastery</div>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

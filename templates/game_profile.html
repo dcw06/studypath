@@ -1,0 +1,154 @@
+{% extends "game_base.html" %}
+{% block title %}Profile — QuizArena{% endblock %}
+{% block content %}
+<div class="page-med">
+
+  <!-- Profile header -->
+  <div class="profile-header-card" style="margin-bottom:24px;">
+    <div style="position:relative;z-index:1;">
+      <div style="font-size:80px;margin-bottom:16px;line-height:1;">{{ player.avatar }}</div>
+      <div style="font-size:26px;font-weight:900;letter-spacing:-0.5px;margin-bottom:4px;">{{ player.username }}</div>
+      <div style="color:var(--muted);font-size:14px;margin-bottom:16px;">{{ player.email }}</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">
+        <span class="pill pill-primary">Lv.{{ player.level }}</span>
+        <span class="pill pill-medium">{{ player.xp }} XP</span>
+        <div class="streak-pill">🔥 {{ player.streak }} day streak</div>
+        <span class="pill" style="background:rgba(255,255,255,.06);border:1px solid var(--border);">{{ player.role|title }}</span>
+      </div>
+      <!-- XP Progress -->
+      <div style="max-width:340px;margin:0 auto 16px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px;">
+          <span>Level {{ player.level }}</span>
+          <span>{{ player.xp % 100 }}/100 to Level {{ player.level + 1 }}</span>
+        </div>
+        <div class="progress-wrap" style="height:8px;">
+          <div class="progress-bar" style="width:{{ player.xp % 100 }}%;"></div>
+        </div>
+      </div>
+      <!-- League badge -->
+      {% if league_progress %}
+      {% set cur = league_progress.current %}
+      <a href="{{ url_for('game_leagues') }}"
+         style="display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:99px;
+                background:{{ cur.bg }};border:1px solid {{ cur.border }};
+                text-decoration:none;margin-bottom:14px;">
+        <span style="font-size:18px;">{{ cur.icon }}</span>
+        <span style="font-size:13px;font-weight:700;color:{{ cur.color }};">{{ cur.name }} League</span>
+        {% if league_progress.next %}
+        <span style="font-size:11px;color:var(--muted);">· {{ league_progress.xp_needed }} XP to {{ league_progress.next.icon }} {{ league_progress.next.name }}</span>
+        {% endif %}
+      </a><br>
+      {% endif %}
+      <a href="{{ url_for('game_settings') }}" class="btn btn-ghost btn-sm">⚙ Settings</a>
+    </div>
+  </div>
+
+  <!-- Stats row -->
+  <div class="dash-stats" style="margin-bottom:24px;">
+    <div class="dash-stat-card">
+      <div class="stat-val">{{ stats.games_played }}</div>
+      <div class="stat-lbl">Games</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="stat-val">{{ stats.avg_score }}%</div>
+      <div class="stat-lbl">Avg Score</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="stat-val">{{ stats.total_correct }}</div>
+      <div class="stat-lbl">Correct Answers</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="stat-val">#{{ rank }}</div>
+      <div class="stat-lbl">Global Rank</div>
+    </div>
+  </div>
+
+  <!-- Subject mastery -->
+  {% if mastery %}
+  <div class="card" style="margin-bottom:24px;">
+    <div class="section-title">📚 Subject Mastery</div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      {% for subj, pct in mastery.items() %}
+      {% set meta = subject_meta.get(subj, {'icon':'📚','color':'#6366f1'}) %}
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px;align-items:center;">
+          <span style="font-weight:600;">{{ meta.icon }} {{ subj }}</span>
+          <span style="font-weight:800;color:{{ meta.color }};">{{ pct }}%</span>
+        </div>
+        <div class="progress-wrap" style="height:10px;">
+          <div style="height:100%;width:{{ pct }}%;background:{{ meta.color }};border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1);"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Achievements -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="section-title">🏅 Achievements</div>
+    <div class="badge-grid">
+      {% for ach in achievements %}
+      <div class="badge-item {{ 'earned' if ach.earned else '' }}" style="opacity:{{ '1' if ach.earned else '0.4' }};">
+        <div style="font-size:32px;margin-bottom:8px;">{{ ach.badge if ach.earned else '🔒' }}</div>
+        <div style="font-size:12px;font-weight:700;margin-bottom:3px;">{{ ach.name }}</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.4;">{{ ach.desc }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Avatar picker -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="section-title">🎨 Customize Avatar</div>
+    <form method="POST" action="{{ url_for('game_profile') }}" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
+      {% for emoji in ['🎮','🦊','🐉','🦁','🐺','🐼','🦅','🦋','🌟','⚡','🔥','🎯','🏆','🧠','🚀','🎓','🦄','🐸'] %}
+      <button type="submit" name="avatar" value="{{ emoji }}"
+              style="font-size:28px;background:{{ 'rgba(99,102,241,.2)' if player.avatar == emoji else 'var(--surface2)' }};
+                     border:2px solid {{ 'var(--primary-l)' if player.avatar == emoji else 'var(--border)' }};
+                     border-radius:12px;padding:10px;cursor:pointer;line-height:1;transition:all .15s;"
+              onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='{{ 'var(--primary-l)' if player.avatar == emoji else 'var(--border)' }}'">
+        {{ emoji }}
+      </button>
+      {% endfor %}
+    </form>
+  </div>
+
+  <!-- Edit username -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="section-title">✏️ Username</div>
+    <form method="POST" action="{{ url_for('game_profile') }}" style="display:flex;gap:10px;margin-top:4px;">
+      <input type="text" name="username" value="{{ player.username }}"
+             style="flex:1;padding:11px 14px;font-size:14px;" maxlength="24" placeholder="Your username">
+      <button type="submit" name="action" value="username" class="btn btn-primary">Save</button>
+    </form>
+    {% if username_error %}
+    <div style="color:var(--danger);font-size:13px;margin-top:8px;">{{ username_error }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Recent games -->
+  <div class="section-title" style="margin-bottom:12px;">📋 Recent Games</div>
+  {% if recent_sessions %}
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
+    {% for s in recent_sessions %}
+    <div class="card" style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+      <div>
+        <div style="font-weight:600;font-size:14px;">{{ s.subject or 'Mixed' }} · {{ s.mode|title }}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">{{ s.created_at[:10] }}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:800;color:var(--primary-l);font-size:16px;">{{ s.score }}/{{ s.total }}</div>
+        <div style="font-size:12px;color:var(--accent);">+{{ s.xp_earned }} XP</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="color:var(--muted);text-align:center;padding:32px;background:var(--card);border-radius:16px;border:1px solid var(--border);margin-bottom:28px;">
+    No games yet — start playing to see your history here!
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

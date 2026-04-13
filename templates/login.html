@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ t.sign_in }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="card">
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <a href="{{ url_for('login', lang=lang) }}"
+         class="tab {% if tab == 'signin' %}tab--active{% endif %}">
+        {{ t.sign_in }}
+      </a>
+      <a href="{{ url_for('register', lang=lang) }}"
+         class="tab {% if tab == 'register' %}tab--active{% endif %}">
+        {{ t.create_account }}
+      </a>
+    </div>
+
+    <div class="body">
+
+      <!-- Sign In Form -->
+      {% if tab == 'signin' %}
+      <h1 class="heading">{{ t.sign_in_to_continue }}</h1>
+      <p class="subtitle">{{ t.subtitle }}</p>
+
+      {% if error %}
+        <p class="alert alert--error">{{ error }}</p>
+      {% endif %}
+      {% if success %}
+        <p class="alert alert--success">{{ t.account_created }}</p>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('login', lang=lang) }}">
+        <input type="hidden" name="action" value="signin" />
+        <div class="field">
+          <label>
+            <span class="field__icon">✉</span>
+            <span class="field__label">{{ t.email }}</span>
+          </label>
+          <input type="email" name="email" required autocomplete="email" />
+        </div>
+        <div class="field">
+          <label>
+            <span class="field__icon">🔒</span>
+            <span class="field__label">{{ t.password }}</span>
+          </label>
+          <input type="password" name="password" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn-primary">{{ t.sign_in }}</button>
+      </form>
+
+      <!-- Register Form -->
+      {% else %}
+      <h1 class="heading">{{ t.create_account }}</h1>
+      <p class="subtitle">{{ t.subtitle }}</p>
+
+      {% if error %}
+        <p class="alert alert--error">{{ error }}</p>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('register', lang=lang) }}">
+        <input type="hidden" name="action" value="register" />
+        <div class="field">
+          <label>
+            <span class="field__icon">👤</span>
+            <span class="field__label">{{ t.full_name }}</span>
+          </label>
+          <input type="text" name="full_name" required autocomplete="name" />
+        </div>
+        <div class="field">
+          <label>
+            <span class="field__icon">✉</span>
+            <span class="field__label">{{ t.email }}</span>
+          </label>
+          <input type="email" name="email" required autocomplete="email" />
+        </div>
+        <div class="field">
+          <label>
+            <span class="field__icon">🔒</span>
+            <span class="field__label">{{ t.password }}</span>
+          </label>
+          <input type="password" name="password" required autocomplete="new-password" />
+        </div>
+        <div class="field">
+          <label>
+            <span class="field__icon">🔒</span>
+            <span class="field__label">{{ t.confirm_password }}</span>
+          </label>
+          <input type="password" name="confirm_password" required autocomplete="new-password" />
+        </div>
+        <button type="submit" class="btn-primary">{{ t.create_account_btn }}</button>
+      </form>
+      {% endif %}
+
+      <!-- OAuth Buttons -->
+      <div class="divider"><span>{{ t.or_continue_with }}</span></div>
+
+      <div class="oauth-grid">
+        <a href="{{ url_for('oauth_login', provider='google') }}" class="oauth-btn oauth-btn--google">Google</a>
+        <a href="{{ url_for('oauth_login', provider='facebook') }}" class="oauth-btn oauth-btn--facebook">Facebook</a>
+        <a href="#" class="oauth-btn oauth-btn--microsoft oauth-btn--disabled">Microsoft</a>
+        <a href="{{ url_for('oauth_login', provider='github') }}" class="oauth-btn oauth-btn--github">GitHub</a>
+        <a href="#" class="oauth-btn oauth-btn--wechat oauth-btn--disabled">WeChat</a>
+      </div>
+
+      <!-- Notices -->
+      <p class="notice notice--warning">
+        <span>⚠</span> {{ t.provider_unavailable }}
+      </p>
+      <p class="notice notice--lock">
+        <span>🔒</span> {{ t.encrypted_auth }}
+      </p>
+      <p class="notice notice--success">
+        <span>✓</span> {{ t.already_have_account }}
+      </p>
+
+      <!-- Language Selector -->
+      <div class="lang-bar">
+        <form method="POST" action="{{ url_for('login' if tab == 'signin' else 'register', lang=lang) }}"
+              class="lang-form">
+          <input type="hidden" name="action" value="apply_lang" />
+          <span class="lang-globe">🌐</span>
+          <select name="language" class="lang-select">
+            {% for code, name in languages.items() %}
+              <option value="{{ code }}" {% if code == lang %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn-apply">{{ t.apply }}</button>
+        </form>
+      </div>
+
+    </div><!-- /.body -->
+  </div><!-- /.card -->
+</body>
+</html>

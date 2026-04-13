@@ -1,0 +1,127 @@
+{% extends "game_base.html" %}
+{% block title %}Game Modes — QuizArena{% endblock %}
+{% block content %}
+<div class="page">
+
+  <!-- Header -->
+  <div style="margin-bottom:32px;">
+    <div class="eyebrow">Choose how you play</div>
+    <div class="page-title">Game Modes</div>
+    <div class="page-sub">Pick a style that fits your mood — from calm solo study to high-stakes survival.</div>
+  </div>
+
+  <!-- Modes grid -->
+  <div class="modes-grid" style="margin-bottom:40px;">
+
+    <a href="{{ url_for('game_topics', mode='solo') }}" class="mode-card">
+      <span class="mode-icon">📖</span>
+      <h3>Solo Learning</h3>
+      <p>Take your time, read explanations, and learn at your own pace. Great for studying.</p>
+      <div class="mode-meta">
+        <span class="pill pill-easy">Relaxed</span>
+        <span class="pill pill-primary">+10 XP/correct</span>
+        <span class="tag">Explanations</span>
+      </div>
+    </a>
+
+    <a href="{{ url_for('game_topics', mode='practice') }}" class="mode-card">
+      <span class="mode-icon">🎯</span>
+      <h3>Practice</h3>
+      <p>Sharpen specific topics with hints and explanations. Perfect for test prep.</p>
+      <div class="mode-meta">
+        <span class="pill pill-easy">Relaxed</span>
+        <span class="pill pill-primary">+8 XP/correct</span>
+        <span class="tag">Hints</span>
+      </div>
+    </a>
+
+    <a href="{{ url_for('game_topics', mode='timed') }}" class="mode-card">
+      <span class="mode-icon">⏱️</span>
+      <h3>Timed Challenge</h3>
+      <p>20 seconds per question. Answer fast or lose the point — great for speed drills.</p>
+      <div class="mode-meta">
+        <span class="pill pill-medium">Moderate</span>
+        <span class="pill pill-primary">+15 XP/correct</span>
+        <span class="tag">20 sec/Q</span>
+      </div>
+    </a>
+
+    <a href="{{ url_for('game_topics', mode='blitz') }}" class="mode-card">
+      <span class="mode-icon">⚡</span>
+      <h3>Blitz Mode</h3>
+      <p>10 seconds per question. Lightning fast — only for the sharpest minds.</p>
+      <div class="mode-meta">
+        <span class="pill pill-hard">Intense</span>
+        <span class="pill pill-primary">+25 XP/correct</span>
+        <span class="tag">10 sec/Q</span>
+      </div>
+    </a>
+
+    <a href="{{ url_for('game_topics', mode='survival') }}" class="mode-card">
+      <span class="mode-icon">💀</span>
+      <h3>Survival</h3>
+      <p>One wrong answer and it's over. How far can you go? Build the longest streak.</p>
+      <div class="mode-meta">
+        <span class="pill pill-hard">Extreme</span>
+        <span class="pill pill-primary">+20 XP/correct</span>
+        <span class="tag">1 life</span>
+      </div>
+    </a>
+
+    <a href="{{ url_for('game_lobby', mode='daily') }}" class="mode-card" style="border-color:rgba(245,158,11,.3);background:linear-gradient(135deg,var(--card),rgba(245,158,11,.05));">
+      <span class="mode-icon">🌟</span>
+      <h3>Daily Challenge</h3>
+      <p>A fresh set of 5 questions every day. Complete it to earn bonus XP and build your streak.</p>
+      <div class="mode-meta">
+        <span class="pill pill-medium">Daily</span>
+        <span class="pill" style="background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3);">+50 Bonus XP</span>
+        <span class="tag">Streak</span>
+      </div>
+    </a>
+
+    <a href="{{ url_for('game_topics', mode='ranked') }}" class="mode-card" style="border-color:rgba(239,68,68,.2);">
+      <span class="mode-icon">🏆</span>
+      <h3>Ranked Mode</h3>
+      <p>Your result directly affects your leaderboard position. Compete seriously.</p>
+      <div class="mode-meta">
+        <span class="pill pill-hard">Competitive</span>
+        <span class="pill pill-primary">+30 XP/correct</span>
+        <span class="tag">📊 Rank affected</span>
+      </div>
+    </a>
+
+    <a href="{{ url_for('game_topics', mode='bot') }}" class="mode-card" style="border-color:rgba(16,185,129,.2);">
+      <span class="mode-icon">🤖</span>
+      <h3>Human vs Bot</h3>
+      <p>Race a bot through 10 questions. Beat it to prove your knowledge is real.</p>
+      <div class="mode-meta">
+        <span class="pill pill-medium">Fun</span>
+        <span class="pill pill-primary">+18 XP/correct</span>
+        <span class="tag">Bot opponent</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- XP reference -->
+  <div class="card" style="max-width:520px;">
+    <div class="section-title">⚡ XP Rewards by Mode</div>
+    {% for mode, xp, color in [
+      ('Solo Learning', '+10 XP / correct', '#6366f1'),
+      ('Practice', '+8 XP / correct', '#6366f1'),
+      ('Human vs Bot', '+18 XP / correct', '#10b981'),
+      ('Timed Challenge', '+15 XP / correct', '#f59e0b'),
+      ('Survival', '+20 XP / correct', '#ef4444'),
+      ('Blitz Mode', '+25 XP / correct', '#ef4444'),
+      ('Ranked Mode', '+30 XP / correct', '#ef4444'),
+      ('Daily Challenge', '+50 XP completion bonus', '#fbbf24'),
+    ] %}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:14px;">{{ mode }}</span>
+      <span style="font-size:14px;font-weight:700;color:{{ color }};">{{ xp }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

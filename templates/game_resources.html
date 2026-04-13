@@ -1,0 +1,175 @@
+{% extends "game_base.html" %}
+{% block title %}Resources — QuizArena{% endblock %}
+{% block content %}
+<div class="page">
+
+  <!-- Header -->
+  <div style="margin-bottom:36px;">
+    <div class="eyebrow">Learning beyond the quiz</div>
+    <div class="page-title">📚 Study Resources</div>
+    <div class="page-sub">
+      Curated links to Khan Academy, OpenStax, Wolfram Alpha, Desmos, Wikipedia and more —
+      organized by subject and topic.
+    </div>
+  </div>
+
+  <!-- Platform legend -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:32px;padding:18px 20px;background:var(--card);border:1px solid var(--border);border-radius:16px;">
+    <span style="font-size:13px;color:var(--muted);font-weight:600;padding-top:2px;">Platforms:</span>
+    {% for key, meta in platforms.items() %}
+    <div style="display:inline-flex;align-items:center;gap:6px;background:{{ meta.bg }};border:1px solid {{ meta.border }};border-radius:99px;padding:4px 12px;font-size:12px;font-weight:600;color:{{ meta.color }};">
+      {{ meta.icon }} {{ meta.name }}
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Search -->
+  <div style="margin-bottom:28px;">
+    <input type="text" id="res-search" placeholder="🔍 Search resources, topics, platforms…"
+           oninput="filterResources(this.value)"
+           style="width:100%;max-width:480px;padding:12px 16px;font-size:14px;background:var(--card);border:1px solid var(--border);border-radius:12px;color:var(--text);">
+  </div>
+
+  <!-- Subject filter tabs -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:32px;" id="subj-tabs">
+    <button onclick="filterSubject('')" class="diff-btn selected" id="tab-all">All Subjects</button>
+    {% for subj in subjects %}
+    {% set meta = subject_meta.get(subj, {'icon':'📚','color':'#6366f1'}) %}
+    <button onclick="filterSubject('{{ subj }}')" class="diff-btn" id="tab-{{ subj|replace(' ','_') }}"
+            style="flex:none;">
+      {{ meta.icon }} {{ subj }}
+    </button>
+    {% endfor %}
+  </div>
+
+  <!-- Resources by subject -->
+  {% for subj in subjects %}
+  {% set subj_meta = subject_meta.get(subj, {'icon':'📚','color':'#6366f1'}) %}
+  <div class="subject-section" data-subject="{{ subj }}" style="margin-bottom:40px;">
+
+    <!-- Subject header -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+      <div style="width:44px;height:44px;border-radius:12px;background:{{ subj_meta.color }}22;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid {{ subj_meta.color }}33;">
+        {{ subj_meta.icon }}
+      </div>
+      <div>
+        <div style="font-size:20px;font-weight:800;">{{ subj }}</div>
+        <div style="font-size:13px;color:var(--muted);">{{ subject_resources[subj]|length if subject_resources[subj] else 0 }} subject resources · {{ topic_counts[subj] }} topic resources</div>
+      </div>
+      <a href="{{ url_for('game_topics', mode='solo') }}?subject={{ subj }}" class="btn btn-ghost btn-sm" style="margin-left:auto;">▶ Practice {{ subj }}</a>
+    </div>
+
+    <!-- Subject-level resources -->
+    {% if subject_resources[subj] %}
+    <div style="margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">General Resources</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;">
+        {% for res in subject_resources[subj] %}
+        {% set pm = platforms.get(res.platform, platforms.coursera) %}
+        <a href="{{ res.url }}" target="_blank" rel="noopener"
+           class="resource-card" data-name="{{ res.title|lower }} {{ subj|lower }} {{ res.platform|lower }}"
+           style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:14px;text-decoration:none;color:var(--text);transition:all .2s;">
+          <div style="width:36px;height:36px;border-radius:9px;background:{{ pm.bg }};border:1px solid {{ pm.border }};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">
+            {{ pm.icon }}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:14px;margin-bottom:3px;line-height:1.3;">{{ res.title }}</div>
+            <div style="font-size:12px;color:{{ pm.color }};font-weight:600;">{{ pm.name }}</div>
+          </div>
+          <span style="font-size:12px;color:var(--muted);flex-shrink:0;margin-top:2px;">↗</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Topic-level resources -->
+    {% if topic_resources[subj] %}
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">By Topic</div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        {% for topic, res_list in topic_resources[subj].items() %}
+        <div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--text);">{{ topic }}</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
+            {% for res in res_list %}
+            {% set pm = platforms.get(res.platform, platforms.coursera) %}
+            <a href="{{ res.url }}" target="_blank" rel="noopener"
+               class="resource-card" data-name="{{ res.title|lower }} {{ topic|lower }} {{ subj|lower }} {{ res.platform|lower }}"
+               style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;text-decoration:none;color:var(--text);transition:all .2s;">
+              <div style="width:30px;height:30px;border-radius:8px;background:{{ pm.bg }};border:1px solid {{ pm.border }};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">
+                {{ pm.icon }}
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ res.title }}</div>
+                <div style="font-size:11px;color:{{ pm.color }};">{{ pm.name }}</div>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+  {% endfor %}
+
+  <!-- Tools section -->
+  <div style="margin-top:16px;margin-bottom:48px;">
+    <div style="padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:20px;">
+      <div style="font-size:20px;font-weight:800;">🧰 Interactive Tools</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px;">Calculators, simulators, and interactive learning tools</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">
+      {% for tool in tools %}
+      {% set pm = platforms.get(tool.platform, platforms.wolfram) %}
+      <a href="{{ tool.url }}" target="_blank" rel="noopener"
+         style="display:flex;align-items:flex-start;gap:14px;padding:18px;background:var(--card);border:1px solid var(--border);border-radius:16px;text-decoration:none;color:var(--text);transition:all .2s;"
+         onmouseover="this.style.borderColor='{{ pm.color }}'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="width:44px;height:44px;border-radius:12px;background:{{ pm.bg }};border:1px solid {{ pm.border }};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">
+          {{ tool.icon }}
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:15px;margin-bottom:4px;">{{ tool.title }}</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.5;">{{ tool.desc }}</div>
+          <div style="font-size:12px;color:{{ pm.color }};font-weight:600;margin-top:6px;">{{ pm.name }} ↗</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<style>
+.resource-card:hover { border-color: var(--border-l) !important; background: var(--card-hover) !important; transform: translateY(-1px); }
+</style>
+<script>
+let activeSubject = '';
+
+function filterSubject(subj) {
+  activeSubject = subj;
+  document.querySelectorAll('.subject-section').forEach(el => {
+    el.style.display = (!subj || el.dataset.subject === subj) ? '' : 'none';
+  });
+  document.querySelectorAll('#subj-tabs .diff-btn').forEach(b => b.classList.remove('selected'));
+  const id = subj ? 'tab-' + subj.replace(/ /g,'_') : 'tab-all';
+  document.getElementById(id)?.classList.add('selected');
+}
+
+function filterResources(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('.resource-card').forEach(card => {
+    const name = card.dataset.name || '';
+    card.style.display = (name.includes(q) || !q) ? '' : 'none';
+  });
+  if (q) {
+    document.querySelectorAll('.subject-section').forEach(el => el.style.display = '');
+    document.querySelectorAll('#subj-tabs .diff-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('tab-all')?.classList.add('selected');
+  }
+}
+</script>
+{% endblock %}

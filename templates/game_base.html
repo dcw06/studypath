@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}StudyPath{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='game.css') }}"/>
+  {% block head %}{% endblock %}
+</head>
+<body>
+{% if show_nav != false %}
+<nav class="nav">
+  <!-- Brand -->
+  <a href="{{ url_for('game_home') }}" class="nav-brand">
+    <div class="brand-icon">📚</div>
+    <span>StudyPath</span>
+  </a>
+
+  <!-- Center links -->
+  <div class="nav-center">
+    {% if session.get('user') %}
+    <div class="nav-links">
+      <a href="{{ url_for('game_dashboard') }}"  class="nav-link {% if active=='dashboard' %}active{% endif %}">Dashboard</a>
+      <a href="{{ url_for('game_modes') }}"      class="nav-link {% if active=='modes' %}active{% endif %}">Study</a>
+      <a href="{{ url_for('game_leaderboard') }}" class="nav-link {% if active=='leaderboard' %}active{% endif %}">Leaderboard</a>
+      <a href="{{ url_for('game_leagues') }}"    class="nav-link {% if active=='leagues' %}active{% endif %}">Leagues</a>
+      <a href="{{ url_for('game_resources') }}"  class="nav-link {% if active=='resources' %}active{% endif %}">Resources</a>
+      <a href="{{ url_for('game_lobby', mode='daily') }}" class="nav-link">Daily Practice</a>
+    </div>
+    {% else %}
+    <div class="nav-links">
+      <a href="{{ url_for('game_home') }}"       class="nav-link {% if active=='home' %}active{% endif %}">Home</a>
+      <a href="{{ url_for('game_modes') }}"      class="nav-link">Study</a>
+      <a href="{{ url_for('game_leaderboard') }}" class="nav-link">Leaderboard</a>
+      <a href="{{ url_for('game_leagues') }}"    class="nav-link">Leagues</a>
+      <a href="{{ url_for('game_resources') }}"  class="nav-link {% if active=='resources' %}active{% endif %}">Resources</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right side -->
+  <div class="nav-right">
+    {% if session.get('user') and player %}
+      <div class="nav-xp-bar" title="{{ player.xp % 100 }} / 100 XP to Level {{ player.level + 1 }}">
+        <span class="nav-xp-level">Lv.{{ player.level }}</span>
+        <div class="nav-xp-track">
+          <div class="nav-xp-fill" style="width:{{ player.xp % 100 }}%"></div>
+        </div>
+        <span class="nav-xp-text">{{ 100 - (player.xp % 100) }} to next</span>
+      </div>
+      <div class="streak-pill">🗓️ {{ player.streak }}-day streak</div>
+      <a href="{{ url_for('game_profile') }}" class="nav-avatar" title="{{ player.username }}">
+        {{ player.avatar }}
+      </a>
+      <a href="{{ url_for('game_settings') }}" class="btn btn-ghost btn-sm" title="Settings">⚙</a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm">Sign In</a>
+    {% endif %}
+  </div>
+</nav>
+{% endif %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in messages %}
+    <div style="max-width:900px;margin:12px auto;padding:0 24px;">
+      <div class="alert alert-{{ 'success' if cat=='success' else 'error' }}">{{ msg }}</div>
+    </div>
+  {% endfor %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+<!-- Footer -->
+{% if show_footer != false %}
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">📚 StudyPath</div>
+    <div class="footer-links">
+      <a href="{{ url_for('game_home') }}">Home</a>
+      <a href="{{ url_for('game_leaderboard') }}">Rankings</a>
+      <a href="{{ url_for('privacy') }}">Privacy</a>
+    </div>
+    <div class="footer-copy">© 2025 StudyPath. Helping students learn.</div>
+  </div>
+</footer>
+{% endif %}
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

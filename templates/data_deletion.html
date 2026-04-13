@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Data Deletion</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+  <style>
+    .prose { max-width: 560px; margin: 60px auto; padding: 0 24px 60px; line-height: 1.7; color: #333; }
+    .prose h1 { color: #1a3a8f; }
+    .prose p { font-size: 14px; }
+    .status-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px;
+                  padding: 16px 20px; margin-top: 20px; font-size: 14px; color: #15803d; }
+    .status-box.pending { background: #fefce8; border-color: #fde047; color: #854d0e; }
+  </style>
+</head>
+<body style="background:#f0f2f7;">
+<div class="prose">
+  <h1>Data Deletion Request</h1>
+
+  {% if confirmation_code %}
+    <div class="status-box">
+      <strong>&#10003; Request received.</strong><br>
+      Confirmation code: <code>{{ confirmation_code }}</code><br>
+      Your data will be deleted within 30 days.
+    </div>
+    <p style="margin-top:16px;">You can use the confirmation code above to check the status of your deletion request.</p>
+  {% else %}
+    <p>To delete all data associated with your account, submit this form. Your information will be permanently removed within <strong>30 days</strong>.</p>
+    <form method="POST" style="margin-top:24px;">
+      <div class="field">
+        <label><span class="field__icon">✉</span><span class="field__label">Email address used to sign in</span></label>
+        <input type="email" name="email" required placeholder="you@example.com"/>
+      </div>
+      <button type="submit" class="btn-primary" style="margin-top:16px;">Request Data Deletion</button>
+    </form>
+  {% endif %}
+</div>
+</body>
+</html>

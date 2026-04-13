@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Signing in…</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <meta http-equiv="refresh" content="2;url=/auth/{{ provider | lower }}/check" />
+</head>
+<body>
+  <div class="card" style="max-width:400px;margin:80px auto;text-align:center;padding:40px 32px;">
+    <p style="font-size:32px;">🌐</p>
+    <h2 class="heading" style="margin-bottom:12px;">Signing in with {{ provider }}</h2>
+    <p class="subtitle">A browser window has opened. Complete sign-in there and return here.</p>
+    <p style="margin-top:24px;color:#aaa;font-size:13px;">This page will update automatically…</p>
+  </div>
+</body>
+</html>

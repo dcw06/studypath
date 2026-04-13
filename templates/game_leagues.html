@@ -1,0 +1,231 @@
+{% extends "game_base.html" %}
+{% block title %}Leagues — StudyPath{% endblock %}
+{% block content %}
+<div class="page">
+
+  <!-- Page header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:28px;">
+    <div>
+      <div class="eyebrow">Competitive Rankings</div>
+      <div class="page-title">Leagues</div>
+      <div class="page-sub">Earn XP to advance through leagues and compete with players at your level.</div>
+    </div>
+    <a href="{{ url_for('game_modes') }}" class="btn btn-primary">Study to Earn XP</a>
+  </div>
+
+  <!-- Current league hero card -->
+  {% set cur = league_progress.current %}
+  {% set nxt = league_progress.next %}
+  <div style="background:{{ cur.bg }};border:2px solid {{ cur.border }};border-radius:16px;padding:28px 32px;margin-bottom:28px;">
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <div style="font-size:64px;line-height:1;">{{ cur.icon }}</div>
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:{{ cur.color }};margin-bottom:4px;">Your Current League</div>
+        <div style="font-size:28px;font-weight:900;color:{{ cur.color }};letter-spacing:-0.5px;">{{ cur.name }}</div>
+        {% if player %}
+          <div style="font-size:14px;color:var(--muted);margin-top:4px;">{{ player.xp }} XP total</div>
+        {% endif %}
+      </div>
+      {% if nxt %}
+      <div style="text-align:right;min-width:160px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Next: {{ nxt.icon }} {{ nxt.name }}</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text);">{{ league_progress.xp_needed }} XP needed</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">{{ league_progress.xp_in_tier }} / {{ league_progress.xp_in_tier + league_progress.xp_needed }} XP in this tier</div>
+      </div>
+      {% else %}
+      <div style="text-align:right;">
+        <div style="font-size:13px;font-weight:700;color:{{ cur.color }};">🏆 Maximum League</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">You've reached the top!</div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if nxt %}
+    <!-- Progress bar toward next league -->
+    <div style="margin-top:20px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px;">
+        <span style="font-weight:600;color:{{ cur.color }};">{{ cur.icon }} {{ cur.name }}</span>
+        <span style="font-weight:600;color:var(--muted);">{{ nxt.icon }} {{ nxt.name }}</span>
+      </div>
+      <div style="background:rgba(0,0,0,.08);border-radius:99px;height:10px;overflow:hidden;">
+        <div style="height:100%;width:{{ league_progress.pct }}%;background:{{ cur.color }};border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1);"></div>
+      </div>
+      <div style="text-align:center;margin-top:8px;font-size:13px;color:var(--muted);">
+        <strong style="color:var(--text);">{{ league_progress.pct }}%</strong> of the way to {{ nxt.name }}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+
+    <!-- Left: all leagues overview -->
+    <div>
+      <div class="section-title" style="margin-bottom:14px;">All Leagues</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        {% for lg in all_leagues %}
+        <a href="{{ url_for('game_leagues', league_id=lg.id) }}"
+           style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:12px;
+                  background:{{ lg.bg if lg.unlocked else 'var(--surface2)' }};
+                  border:2px solid {{ lg.border if lg.is_current else ('var(--border)' if not lg.unlocked else lg.border.replace('.3', '.15')) }};
+                  text-decoration:none;transition:all .15s;opacity:{{ '1' if lg.unlocked else '0.5' }};"
+           onmouseover="this.style.transform='translateX(3px)'" onmouseout="this.style.transform=''">
+
+          <!-- League icon -->
+          <div style="font-size:28px;min-width:36px;text-align:center;">
+            {{ lg.icon if lg.unlocked else '🔒' }}
+          </div>
+
+          <!-- League name + XP requirement -->
+          <div style="flex:1;">
+            <div style="font-size:15px;font-weight:700;color:{{ lg.color if lg.unlocked else 'var(--muted)' }};">
+              {{ lg.name }}
+              {% if lg.is_current %}
+                <span style="font-size:11px;font-weight:600;background:{{ lg.color }};color:#fff;border-radius:99px;padding:2px 8px;margin-left:6px;">YOU ARE HERE</span>
+              {% endif %}
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+              {% if lg.min_xp == 0 %}
+                Starting league
+              {% else %}
+                {{ lg.min_xp }} XP required
+              {% endif %}
+              {% if lg.tier_size %}
+                · {{ lg.tier_size }} XP tier
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Progress bar (only within current league's tier) -->
+          {% if lg.is_current and league_progress.next %}
+          <div style="min-width:80px;">
+            <div style="background:rgba(0,0,0,.08);border-radius:99px;height:6px;overflow:hidden;margin-bottom:4px;">
+              <div style="height:100%;width:{{ league_progress.pct }}%;background:{{ lg.color }};border-radius:99px;"></div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);text-align:right;">{{ league_progress.pct }}%</div>
+          </div>
+          {% elif lg.unlocked and not lg.is_current %}
+          <div style="font-size:20px;">✅</div>
+          {% elif not lg.unlocked %}
+          <div style="font-size:12px;color:var(--muted);text-align:right;min-width:60px;">
+            {{ lg.min_xp - (player.xp if player else 0) }} more XP
+          </div>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+
+      <!-- XP needed summary -->
+      {% if player %}
+      <div class="card" style="margin-top:16px;padding:16px 20px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text);">Your XP Milestones</div>
+        {% for lg in all_leagues %}
+        {% if lg.min_xp > 0 %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;">
+          <span>{{ lg.icon }} {{ lg.name }}</span>
+          {% if player.xp >= lg.min_xp %}
+            <span style="color:var(--success);font-weight:600;">✓ Unlocked</span>
+          {% else %}
+            <span style="color:var(--muted);">{{ lg.min_xp - player.xp }} XP away</span>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Right: members in the active league -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div class="section-title" style="margin-bottom:0;">
+          {{ active_league.icon }} {{ active_league.name }} League Players
+        </div>
+        <span style="font-size:12px;color:var(--muted);">{{ members|length }} player{{ 's' if members|length != 1 }}</span>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden;">
+        {% if members %}
+          {% for p in members %}
+          <div class="lb-row" style="{{ 'background:rgba(37,99,235,.06);' if player and p.id == player.id else '' }}">
+            <div class="lb-rank {{ 'gold' if loop.index == 1 else ('silver' if loop.index == 2 else ('bronze' if loop.index == 3 else '')) }}"
+                 style="color:{{ active_league.color if loop.index <= 3 else 'var(--muted2)' }};">
+              {% if loop.index <= 3 %}
+                {{ ['🥇','🥈','🥉'][loop.index - 1] }}
+              {% else %}
+                {{ loop.index }}
+              {% endif %}
+            </div>
+            <div class="lb-avatar">{{ p.avatar }}</div>
+            <div class="lb-name" style="{{ 'color:var(--primary);font-weight:800;' if player and p.id == player.id else '' }}">
+              {{ p.username }}
+              {% if player and p.id == player.id %}
+                <span style="font-size:11px;color:var(--muted);font-weight:400;">(you)</span>
+              {% endif %}
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;margin-left:auto;">
+              <span class="pill pill-primary" style="font-size:10px;">Lv.{{ p.level }}</span>
+              <div class="lb-xp">{{ p.xp }} XP</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="padding:48px 24px;text-align:center;">
+            <div style="font-size:40px;margin-bottom:12px;">{{ active_league.icon }}</div>
+            <div style="font-weight:700;margin-bottom:6px;color:var(--text);">No players in {{ active_league.name }} yet</div>
+            <div style="font-size:13px;color:var(--muted);">
+              {% if player and player.xp < active_league.min_xp %}
+                You need {{ active_league.min_xp - player.xp }} more XP to join this league.
+              {% else %}
+                Be the first to reach this league!
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- League tabs for switching -->
+      <div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;">
+        {% for lg in all_leagues %}
+        <a href="{{ url_for('game_leagues', league_id=lg.id) }}"
+           style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;
+                  background:{{ lg.bg if lg.id == active_league.id else 'var(--surface2)' }};
+                  border:1px solid {{ lg.border if lg.id == active_league.id else 'var(--border)' }};
+                  color:{{ lg.color if lg.id == active_league.id else 'var(--muted)' }};">
+          {{ lg.icon }} {{ lg.name }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+
+  <!-- How leagues work -->
+  <div class="card" style="margin-top:28px;padding:24px 28px;">
+    <div class="section-title" style="margin-bottom:16px;">How Leagues Work</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
+      <div>
+        <div style="font-size:20px;margin-bottom:6px;">📈</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--text);">Earn XP by Studying</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Complete practice sessions, daily challenges, and timed quizzes to earn XP and advance through leagues.</div>
+      </div>
+      <div>
+        <div style="font-size:20px;margin-bottom:6px;">🏆</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--text);">Advance Automatically</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Once you hit a league's XP threshold, you're promoted instantly — no waiting, no weekly resets.</div>
+      </div>
+      <div>
+        <div style="font-size:20px;margin-bottom:6px;">👥</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--text);">Compete Within Your League</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Each league shows only players at your level, so you always compete on equal footing.</div>
+      </div>
+      <div>
+        <div style="font-size:20px;margin-bottom:6px;">💡</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--text);">XP by Mode</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Daily Practice gives the most XP (up to 50 per session). Timed and Survival modes also give bonus XP.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

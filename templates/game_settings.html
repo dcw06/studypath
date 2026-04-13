@@ -1,0 +1,156 @@
+{% extends "game_base.html" %}
+{% block title %}Settings — QuizArena{% endblock %}
+{% block content %}
+<div class="page-med">
+  <div class="page-title">Settings</div>
+
+  {% if saved %}
+  <div class="alert alert-success" style="margin-bottom:20px;">Settings saved!</div>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('game_settings') }}">
+
+    <!-- Account -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="section-title">Account</div>
+      <div class="settings-row">
+        <div><div style="font-weight:600;">Email</div><div style="font-size:13px;color:var(--muted);">{{ player.email }}</div></div>
+        <span class="pill pill-easy">Verified</span>
+      </div>
+      <div class="settings-row">
+        <div><div style="font-weight:600;">Username</div><div style="font-size:13px;color:var(--muted);">{{ player.username }}</div></div>
+        <a href="{{ url_for('game_profile') }}" class="btn btn-ghost btn-sm">Edit</a>
+      </div>
+      <div class="settings-row" style="border-bottom:none;">
+        <div><div style="font-weight:600;">Role</div><div style="font-size:13px;color:var(--muted);">{{ player.role|title }}</div></div>
+        <select name="role" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);">
+          {% for r in ['student','teacher','parent'] %}
+          <option value="{{ r }}" {{ 'selected' if player.role == r else '' }}>{{ r|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- Game Preferences -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="section-title">Game Preferences</div>
+      <div class="settings-row">
+        <div><div style="font-weight:600;">Default Difficulty</div><div style="font-size:13px;color:var(--muted);">Starting difficulty for new games</div></div>
+        <select name="default_difficulty" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);">
+          {% for d in ['easy','medium','hard'] %}
+          <option value="{{ d }}" {{ 'selected' if prefs.default_difficulty == d else '' }}>{{ d|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="settings-row">
+        <div><div style="font-weight:600;">Default Question Count</div></div>
+        <select name="default_count" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);">
+          {% for n in [5, 10, 15] %}
+          <option value="{{ n }}" {{ 'selected' if prefs.default_count == n else '' }}>{{ n }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="settings-row" style="border-bottom:none;">
+        <div><div style="font-weight:600;">Show Explanations</div><div style="font-size:13px;color:var(--muted);">Solo & Practice modes</div></div>
+        <input type="checkbox" name="show_explanations" value="1" {{ 'checked' if prefs.show_explanations else '' }} style="width:20px;height:20px;accent-color:var(--primary);">
+      </div>
+    </div>
+
+    <!-- Audio -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="section-title">Audio</div>
+      <div class="settings-row">
+        <div><div style="font-weight:600;">Sound Effects</div><div style="font-size:13px;color:var(--muted);">Play sounds on correct/wrong answers</div></div>
+        <input type="checkbox" name="sound_effects" value="1" {{ 'checked' if prefs.sound_effects else '' }} style="width:20px;height:20px;accent-color:var(--primary);">
+      </div>
+      <div class="settings-row" style="border-bottom:none;">
+        <div><div style="font-weight:600;">Background Music</div><div style="font-size:13px;color:var(--muted);">Music during gameplay</div></div>
+        <input type="checkbox" name="music" value="1" {{ 'checked' if prefs.music else '' }} style="width:20px;height:20px;accent-color:var(--primary);">
+      </div>
+    </div>
+
+    <!-- Language -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="section-title">Language</div>
+      <div class="settings-row" style="border-bottom:none;">
+        <div><div style="font-weight:600;">Interface Language</div><div style="font-size:13px;color:var(--muted);">Game UI language</div></div>
+        <select name="language" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);">
+          {% for code, name in [('en','English'),('es','Español'),('zh','中文'),('tl','Filipino'),('vi','Tiếng Việt')] %}
+          <option value="{{ code }}" {{ 'selected' if prefs.language == code else '' }}>{{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- Accessibility -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="section-title">Accessibility</div>
+      <div class="settings-row">
+        <div><div style="font-weight:600;">Large Text Mode</div><div style="font-size:13px;color:var(--muted);">Increase font size</div></div>
+        <input type="checkbox" name="large_text" value="1" {{ 'checked' if prefs.large_text else '' }} style="width:20px;height:20px;accent-color:var(--primary);">
+      </div>
+      <div class="settings-row">
+        <div><div style="font-weight:600;">Reduce Motion</div><div style="font-size:13px;color:var(--muted);">Fewer animations</div></div>
+        <input type="checkbox" name="reduce_motion" value="1" {{ 'checked' if prefs.reduce_motion else '' }} style="width:20px;height:20px;accent-color:var(--primary);">
+      </div>
+      <div class="settings-row">
+        <div><div style="font-weight:600;">Colorblind Mode</div><div style="font-size:13px;color:var(--muted);">Use patterns in addition to color</div></div>
+        <input type="checkbox" name="colorblind" value="1" {{ 'checked' if prefs.colorblind else '' }} style="width:20px;height:20px;accent-color:var(--primary);">
+      </div>
+      <div class="settings-row" style="border-bottom:none;">
+        <div><div style="font-weight:600;">Timer Pressure</div><div style="font-size:13px;color:var(--muted);">Extra time per question in timed modes</div></div>
+        <select name="timer_extra" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);">
+          <option value="0" {{ 'selected' if not prefs.timer_extra else '' }}>None</option>
+          <option value="5" {{ 'selected' if prefs.timer_extra == 5 else '' }}>+5 seconds</option>
+          <option value="10" {{ 'selected' if prefs.timer_extra == 10 else '' }}>+10 seconds</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Privacy -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="section-title">Privacy</div>
+      <div class="settings-row">
+        <div><div style="font-weight:600;">Public Profile</div><div style="font-size:13px;color:var(--muted);">Show your profile on leaderboards</div></div>
+        <input type="checkbox" name="public_profile" value="1" {{ 'checked' if prefs.public_profile != false else '' }} style="width:20px;height:20px;accent-color:var(--primary);">
+      </div>
+      <div class="settings-row" style="border-bottom:none;">
+        <div><div style="font-weight:600;">Share Activity</div><div style="font-size:13px;color:var(--muted);">Allow others to see your game results</div></div>
+        <input type="checkbox" name="share_activity" value="1" {{ 'checked' if prefs.share_activity else '' }} style="width:20px;height:20px;accent-color:var(--primary);">
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="section-title">Notifications</div>
+      <div class="settings-row">
+        <div><div style="font-weight:600;">Daily Challenge Reminder</div></div>
+        <input type="checkbox" name="daily_reminder" value="1" {{ 'checked' if prefs.daily_reminder else '' }} style="width:20px;height:20px;accent-color:var(--primary);">
+      </div>
+      <div class="settings-row" style="border-bottom:none;">
+        <div><div style="font-weight:600;">Rank Change Alerts</div></div>
+        <input type="checkbox" name="rank_alerts" value="1" {{ 'checked' if prefs.rank_alerts else '' }} style="width:20px;height:20px;accent-color:var(--primary);">
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-lg btn-full">Save Settings</button>
+  </form>
+
+  <!-- Danger zone -->
+  <div class="card" style="margin-top:24px;border-color:#ef444433;">
+    <div class="section-title" style="color:var(--danger);">Danger Zone</div>
+    <div class="settings-row">
+      <div><div style="font-weight:600;">Reset Progress</div><div style="font-size:13px;color:var(--muted);">Clear all XP, level, and game history</div></div>
+      <form method="POST" action="{{ url_for('game_reset_progress') }}"
+            onsubmit="return confirm('This will permanently delete all your progress. Are you sure?')">
+        <button type="submit" class="btn" style="background:transparent;border:1px solid var(--danger);color:var(--danger);">Reset</button>
+      </form>
+    </div>
+    <div class="settings-row" style="border-bottom:none;">
+      <div><div style="font-weight:600;">Sign Out</div></div>
+      <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Sign Out</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

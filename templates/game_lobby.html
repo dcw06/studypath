@@ -1,0 +1,83 @@
+{% extends "game_base.html" %}
+{% block title %}Lobby — QuizArena{% endblock %}
+{% block content %}
+<div class="page-med">
+  <a href="{{ url_for('game_modes') }}" style="color:var(--muted);font-size:14px;text-decoration:none;display:inline-block;margin-bottom:16px;">← Back to modes</a>
+
+  <div class="card" style="text-align:center;padding:40px 24px;">
+    <div style="font-size:56px;margin-bottom:16px;">
+      {{ {'solo':'📖','practice':'🎯','timed':'⏱️','survival':'💀','daily':'🌟','blitz':'⚡'}.get(mode,'🎮') }}
+    </div>
+    <div class="page-title" style="margin-bottom:8px;">{{ mode|title }} Mode</div>
+
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:16px 0 28px;">
+      {% if subject %}
+      <span class="pill pill-easy">{{ subject }}</span>
+      {% endif %}
+      {% if topic and topic != 'random' %}
+      <span class="pill pill-medium">{{ topic }}</span>
+      {% endif %}
+      <span class="pill pill-{{ difficulty }}">{{ difficulty|title }}</span>
+      <span class="pill" style="background:var(--card);border:1px solid var(--border);">{{ count }} questions</span>
+    </div>
+
+    <!-- XP preview -->
+    <div style="background:var(--bg);border-radius:12px;padding:20px;margin-bottom:28px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap;">
+      {% set xp_base = {'solo':10,'practice':8,'timed':15,'survival':20,'daily':50,'blitz':25}.get(mode,10) %}
+      <div style="text-align:center;">
+        <div style="font-size:22px;font-weight:800;color:var(--accent);">+{{ xp_base }} XP</div>
+        <div style="font-size:12px;color:var(--muted);">per correct answer</div>
+      </div>
+      {% if mode in ['timed','blitz'] %}
+      <div style="text-align:center;">
+        <div style="font-size:22px;font-weight:800;color:var(--primary);">+bonus</div>
+        <div style="font-size:12px;color:var(--muted);">speed reward</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Rules -->
+    <div style="text-align:left;max-width:400px;margin:0 auto 32px;">
+      <div class="section-title" style="text-align:center;margin-bottom:12px;">Rules</div>
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">
+        {% if mode == 'solo' %}
+        <li>📖 Learn at your own pace — no timer</li>
+        <li>💡 Read explanations after each answer</li>
+        <li>✅ +10 XP for every correct answer</li>
+        {% elif mode == 'practice' %}
+        <li>🎯 Instant feedback after each question</li>
+        <li>💡 Hints available on wrong answers</li>
+        <li>✅ +8 XP for every correct answer</li>
+        {% elif mode == 'timed' %}
+        <li>⏱️ 20 seconds per question</li>
+        <li>⚡ Faster answers earn bonus XP</li>
+        <li>✅ +15 XP + speed bonus per correct</li>
+        {% elif mode == 'survival' %}
+        <li>💀 One wrong answer ends the game</li>
+        <li>🔥 Build the longest streak possible</li>
+        <li>✅ +20 XP per correct answer</li>
+        {% elif mode == 'daily' %}
+        <li>🌟 5 curated questions for today</li>
+        <li>🔥 Maintain your daily streak</li>
+        <li>✅ +50 XP bonus on completion</li>
+        {% elif mode == 'blitz' %}
+        <li>⚡ 10 seconds per question</li>
+        <li>🏆 Score multiplier increases with streak</li>
+        <li>✅ +25 XP + multiplier per correct</li>
+        {% endif %}
+      </ul>
+    </div>
+
+    <form method="POST" action="{{ url_for('game_start') }}">
+      <input type="hidden" name="mode"       value="{{ mode }}">
+      <input type="hidden" name="subject"    value="{{ subject or '' }}">
+      <input type="hidden" name="topic"      value="{{ topic or '' }}">
+      <input type="hidden" name="difficulty" value="{{ difficulty or 'medium' }}">
+      <input type="hidden" name="count"      value="{{ count or 10 }}">
+      <button type="submit" class="btn btn-primary btn-lg" style="min-width:200px;">
+        ▶ Start Now
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
